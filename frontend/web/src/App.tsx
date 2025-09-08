@@ -4,7 +4,8 @@ export default function App() {
   const [msg, setMsg] = useState("loading...");
 
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_BASE + "/health")
+    const apiBase = (import.meta.env.VITE_API_BASE as string | undefined) || "/api";
+    fetch(`${apiBase}/health`)
       .then(r => {
         if (!r.ok) throw new Error("non-ok");
         return r.json();
