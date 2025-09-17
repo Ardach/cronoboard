@@ -1,6 +1,7 @@
 package com.cronoboard.cronoboardbackend.controller;
 
 import com.cronoboard.cronoboardbackend.dto.task.TaskCreateRequest;
+import com.cronoboard.cronoboardbackend.dto.task.TaskResponse;
 import com.cronoboard.cronoboardbackend.dto.task.TaskUpdateRequest;
 import com.cronoboard.cronoboardbackend.entity.Task;
 import com.cronoboard.cronoboardbackend.entity.TaskStatus;
@@ -22,23 +23,25 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> list(@RequestParam Long userId,
-                           @RequestParam(required = false) TaskStatus status) {
+    public List<TaskResponse> list(@RequestParam Long userId,
+                                   @RequestParam(required = false) TaskStatus status) {
         if (status == null) {
-            return repo.findByUserIdOrderByUpdatedAtDesc(userId);
+            return repo.findByUserIdOrderByUpdatedAtDesc(userId)
+                    .stream().map(this::toResponse).toList();
         }
-        return repo.findByUserIdAndStatusOrderByUpdatedAtDesc(userId, status);
+        return repo.findByUserIdAndStatusOrderByUpdatedAtDesc(userId, status)
+                .stream().map(this::toResponse).toList();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> get(@PathVariable Long id) {
+    public ResponseEntity<TaskResponse> get(@PathVariable Long id) {
         return repo.findById(id)
-            .map(ResponseEntity::ok)
+            .map(t -> ResponseEntity.ok(toResponse(t)))
             .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Task> create(@Valid @RequestBody TaskCreateRequest req) {
+    public ResponseEntity<TaskResponse> create(@Valid @RequestBody TaskCreateRequest req) {
         Task t = new Task();
         t.setUserId(req.getUserId());
         t.setProjectId(req.getProjectId());
@@ -50,12 +53,13 @@ public class TaskController {
         t.setDueDate(req.getDueDate());
         t.setOrderIndex(req.getOrderIndex());
         t.setEstimatedPomodoros(req.getEstimatedPomodoros());
-        return ResponseEntity.ok(repo.save(t));
+        Task saved = repo.save(t);
+        return ResponseEntity.ok(toResponse(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Task> update(@PathVariable Long id,
-                                       @Valid @RequestBody TaskUpdateRequest req) {
+    public ResponseEntity<TaskResponse> update(@PathVariable Long id,
+                                               @Valid @RequestBody TaskUpdateRequest req) {
         return repo.findById(id).map(t -> {
             if (req.getTitle() != null) t.setTitle(req.getTitle());
             if (req.getDescription() != null) t.setDescription(req.getDescription());
@@ -66,7 +70,8 @@ public class TaskController {
             if (req.getEstimatedPomodoros() != null) t.setEstimatedPomodoros(req.getEstimatedPomodoros());
             if (req.getProjectId() != null) t.setProjectId(req.getProjectId());
             if (req.getParentTaskId() != null) t.setParentTaskId(req.getParentTaskId());
-            return ResponseEntity.ok(repo.save(t));
+            Task saved = repo.save(t);
+            return ResponseEntity.ok(toResponse(saved));
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -75,5 +80,23 @@ public class TaskController {
         if (!repo.existsById(id)) return ResponseEntity.notFound().build();
         repo.deleteById(id); // hard delete
         return ResponseEntity.noContent().build();
+    }
+
+    private TaskResponse toResponse(Task t) {
+        TaskResponse r = new TaskResponse();
+        r.setId(t.getId());
+        r.setUserId(t.getUserId());
+        r.setProjectId(t.getProjectId());
+        r.setParentTaskId(t.getParentTaskId());
+        r.setTitle(t.getTitle());
+        r.setDescription(t.getDescription());
+        r.setStatus(t.getStatus().name());
+        r.setPriority(t.getPriority());
+        r.setDueDate(t.getDueDate());
+        r.setOrderIndex(t.getOrderIndex());
+        r.setEstimatedPomodoros(t.getEstimatedPomodoros());
+        r.setTotalFocusSeconds(t.getTotalFocusSeconds());
+        r.setCompletedSessions(t.getCompletedSessions());
+        return r;
     }
 }

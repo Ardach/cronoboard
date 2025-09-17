@@ -1,6 +1,7 @@
 package com.cronoboard.cronoboardbackend.entity;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.OffsetDateTime;
@@ -8,7 +9,8 @@ import java.time.OffsetDateTime;
 @Entity
 @Table(name = "tasks")
 public class Task {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "user_id", nullable = false)
@@ -46,6 +48,28 @@ public class Task {
 
     @Column(name = "updated_at", nullable = false, columnDefinition = "timestamptz")
     private OffsetDateTime updatedAt;
+
+    @Column(name = "total_focus_seconds", nullable = false)
+    private int totalFocusSeconds;
+
+    @Column(name = "completed_sessions", nullable = false)
+    private int completedSessions;
+
+    public int getTotalFocusSeconds() {
+        return totalFocusSeconds;
+    }
+
+    public void setTotalFocusSeconds(int totalFocusSeconds) {
+        this.totalFocusSeconds = totalFocusSeconds;
+    }
+
+    public int getCompletedSessions() {
+        return completedSessions;
+    }
+
+    public void setCompletedSessions(int completedSessions) {
+        this.completedSessions = completedSessions;
+    }
 
     public Long getId() {
         return id;
@@ -159,6 +183,8 @@ public class Task {
     }
 
     @PreUpdate
-    void onUpdate() { updatedAt = OffsetDateTime.now(); }
+    void onUpdate() {
+        updatedAt = OffsetDateTime.now();
+    }
 
 }
